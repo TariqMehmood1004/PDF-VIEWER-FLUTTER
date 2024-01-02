@@ -1,42 +1,100 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:pdf_viewer_plugin/pdf_viewer_plugin.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(const PDFViewerFlutterApp());
+}
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-  // This widget is the root of your application.
+class PDFViewerFlutterApp extends StatelessWidget {
+  const PDFViewerFlutterApp({Key? key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // Application name
-      title: 'Flutter Hello World',
-      // Application theme data, you can set the colors for the application as
-      // you want
+      title: 'PDF Viewer',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      // A widget which will be started on application startup
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
-  final String title;
-  const MyHomePage({super.key, required this.title});  
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key}) : super(key: key);
+
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  String? _filePath;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // The title text which will be shown on the action bar
-        title: Text(title),
+        title: const Text("PDF VIEWER"),
+        backgroundColor: Colors.blueGrey[900],
+        centerTitle: true,
+        elevation: 0,
       ),
-      body: Center(
-        child: Text(
-          'Hello, World!',
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _filePath != null
+              ? PDFViewer(
+                  filePath: _filePath!,
+                )
+              : const Center(child: Text('No PDF selected')),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blueGrey[900],
+              ),
+              child: const Text(
+                'PDF Viewer',
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            ListTile(
+              title: const Text('Open PDF'),
+              onTap: () {
+                _loadPdf();
+                Navigator.pop(context);
+              },
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Future<void> _loadPdf() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result != null) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      String filePath = result.files.single.path!;
+
+      setState(() {
+        _filePath = filePath;
+        _isLoading = false;
+      });
+    }
   }
 }
